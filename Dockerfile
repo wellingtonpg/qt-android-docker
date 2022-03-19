@@ -1,5 +1,7 @@
 FROM debian:latest
 
+ARG QT_USER=user
+ARG QT_PASSWORD=pass
 ARG QT_VERSION=5.12.4
 ARG NDK_VERSION=r17c
 ARG SDK_INSTALL_PARAMS=platform-tool,build-tools-20.0.0,android-19
@@ -52,7 +54,7 @@ RUN apt-get install -y \
 ENV VERBOSE=1
 ENV QT_CI_PACKAGES=$QT_PACKAGES
 
-RUN wget https://raw.githubusercontent.com/homdx/qtci/master/bin/install-android-sdk --directory-prefix=/tmp \
+RUN wget https://raw.githubusercontent.com/wellingtonpg/qtci/master/bin/install-android-sdk --directory-prefix=/tmp \
 	&& chmod u+rx /tmp/install-android-sdk \
 	&& /tmp/install-android-sdk $SDK_INSTALL_PARAMS
 
@@ -63,22 +65,24 @@ RUN apt-get install -y \
 	libglib2.0-0 \
 	&& apt-get clean
 
-#download + install Qt
+#ENV http_proxy=invalid
+ENV QT_CI_LOGIN=$QT_USER
+ENV QT_CI_PASSWORD=$QT_PASSWORD
 
+#download + install Qt
 RUN mkdir -p /tmp/qt-installer \
 	cd /tmp/qt-installer \
-	&& wget https://raw.githubusercontent.com/homdx/qtci/master/bin/extract-qt-installer --directory-prefix=/tmp/qt-installer/ \
-	&& wget https://raw.githubusercontent.com/homdx/qtci/master/recipes/install-qt --directory-prefix=/tmp/qt-installer/ \
+	&& wget https://raw.githubusercontent.com/wellingtonpg/qtci/master/bin/extract-qt-installer --directory-prefix=/tmp/qt-installer/ \
+	&& wget https://raw.githubusercontent.com/wellingtonpg/qtci/master/recipes/install-qt --directory-prefix=/tmp/qt-installer/ \
 	&& export PATH=$PATH:/tmp/qt-installer/ \
 	&& chmod u+rx /tmp/qt-installer/extract-qt-installer \
 	&& chmod u+rx /tmp/qt-installer/install-qt \
+	&& echo $PATH \
 	&& bash /tmp/qt-installer/install-qt $QT_VERSION \
 	&& rm -rf /tmp/qt-installer
 
-RUN wget https://raw.githubusercontent.com/homdx/qtci/master/bin/build-android-gradle-project --directory-prefix=/root/ \
+RUN wget https://raw.githubusercontent.com/wellingtonpg/qtci/master/bin/build-android-gradle-project --directory-prefix=/root/ \
 	&& chmod u+rx /root/build-android-gradle-project
-
-RUN echo $PATH
 
 ENV PATH="/Qt/$QT_VERSION/android_armv7/bin/:${PATH}"
 ENV ANDROID_NDK_ROOT="/android-ndk-$NDK_VERSION"
